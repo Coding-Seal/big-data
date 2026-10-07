@@ -1,0 +1,20 @@
+# Devenv
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+data
+
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# PoC data (re-downloadable from Wikimedia, not source-controlled)
+poc/data/

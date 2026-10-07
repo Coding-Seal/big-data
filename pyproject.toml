@@ -1,0 +1,13 @@
+[project]
+name = "big-data"
+version = "0.1.0"
+description = "Extensible Wikipedia pageviews analytics pipeline (polytech big-data course project)"
+requires-python = "==3.11.*"
+dependencies = [
+    "pyspark==3.5.1",
+    "pandas",
+    "pyyaml>=6.0.3",
+]
+
+[tool.uv]
+package = false

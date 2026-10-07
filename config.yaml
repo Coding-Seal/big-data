@@ -1,0 +1,26 @@
+# Pipeline config: which wiki(s), which date range, where storage lives.
+# Defaults to Simple English Wikipedia for fast local iteration -- same
+# schema as enwiki, ~100x smaller dumps. Switch `wiki`/`wiki_db` and the
+# pageviews domain codes to go to enwiki; nothing else should need to
+# change (see docs/arch/layered-design.md, "Config, not code, controls
+# scope").
+
+wiki: simple
+storage_root: data  # bronze/silver land under <repo_root>/<storage_root>/
+
+pageviews:
+  domain_codes: [simple]
+
+page_dump:
+  wiki_db: simplewiki
+
+date_range:
+  start: "2026-10-04T10"
+  end: "2026-10-04T11"
+
+# Optional: override a question's default chart type (Vega-Lite `mark`)
+# without touching any code -- any mark name works: bar, line, point, area,
+# circle, ... (see src/common/charts.py). Omit a question here to use its
+# own default_mark().
+gold:
+  q4_length_revisions: line
