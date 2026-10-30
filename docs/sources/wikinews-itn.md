@@ -1,7 +1,24 @@
 # Wikinews / "In the news" (ITN) history
 
-**Status:** not fetched — the one research question (Q2) still missing a
-committed data source; see `docs/arch/implementation-order.md`, step 8.
+**Status:** in use, via the mediawiki_history option below — implemented as
+`sources/mediawiki_history.py::to_silver`'s `itn_edit_fact` output, filtered
+to `config.yaml`'s `mediawiki_history.itn_page_title`. Chosen over the
+`enwikinews` XML option because it reuses the TSV parsing already needed for
+Q4's revision half, with no new parser.
+
+**Caveat found while wiring this up:** the project's default `simple`
+wiki/config has no actively-maintained ITN-style page. Checked directly
+against the already-downloaded `simplewiki` page dump — the only
+`Current_events`-titled pages in both the main (`ns=0`) and project
+(`ns=4`) namespaces are themselves redirects (`is_redirect=1`), not a live,
+regularly-edited portal; only user-sandbox pages (`ns=2`) match
+`In_the_news` by name. So with the default config, `itn_page_title` is left
+unset and Q2 runs but reports every spike as `has_nearby_news=false`. Real
+signal needs `wiki: en` / `page_dump.wiki_db: enwiki` and
+`itn_page_title: "Wikipedia:In_the_news"` (not independently verified
+against a downloaded enwiki dump — enwiki is documented elsewhere as
+maintaining this page actively, but confirm before relying on it for a
+real run).
 
 ## Location
 

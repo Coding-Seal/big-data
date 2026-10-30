@@ -16,6 +16,7 @@ from pyspark.sql import functions as F
 
 from common.http import fetch_to
 from common.namespaces import NON_ARTICLE_REGEX
+from config import DateRange
 
 URL_TMPL = (
     "https://dumps.wikimedia.org/other/pageviews/{yyyy}/{yyyy}-{mm}/"
@@ -33,6 +34,18 @@ def describe() -> dict:
     }
 
 
+def _hours(start: str, end: str):
+    """[start, end] inclusive, as datetimes, one per hour."""
+    start_dt, end_dt = DateRange(start, end).bounds()
+    while start_dt <= end_dt:
+        yield start_dt
+        start_dt += timedelta(hours=1)
+
+
+def _filename(hour: datetime) -> str:
+    return f"pageviews-{hour.strftime('%Y%m%d')}-{hour.hour:02d}0000.gz"
+
+
 def download(start: str, end: str, dest: Path) -> list[Path]:
     """Fetch hourly files for [start, end] (inclusive, "%Y-%m-%dT%H").
 
@@ -40,40 +53,54 @@ def download(start: str, end: str, dest: Path) -> list[Path]:
     again with a later `end` only fetches what's new.
     """
     dest.mkdir(parents=True, exist_ok=True)
-    start_dt = datetime.strptime(start, "%Y-%m-%dT%H")
-    end_dt = datetime.strptime(end, "%Y-%m-%dT%H")
-    if end_dt < start_dt:
-        raise ValueError("end must not be before start")
 
     fetched = []
-    hour = start_dt
-    while hour <= end_dt:
-        yyyymmdd = hour.strftime("%Y%m%d")
-        hh = f"{hour.hour:02d}"
-        path = dest / f"pageviews-{yyyymmdd}-{hh}0000.gz"
+    for hour in _hours(start, end):
+        path = dest / _filename(hour)
         if path.exists():
             log.info("skip (already have) %s", path.name)
         else:
             url = URL_TMPL.format(
                 yyyy=f"{hour.year:04d}", mm=f"{hour.month:02d}",
-                yyyymmdd=yyyymmdd, hh=hh,
+                yyyymmdd=hour.strftime("%Y%m%d"), hh=f"{hour.hour:02d}",
             )
             log.info("fetching %s", path.name)
             fetch_to(url, path)
         fetched.append(path)
-        hour += timedelta(hours=1)
     return fetched
 
 
 def to_silver(
-    spark: SparkSession, bronze_dir: Path, wiki: str, domain_codes: list[str]
+    spark: SparkSession,
+    bronze_dir: Path,
+    wiki: str,
+    domain_codes: list[str],
+    start: str,
+    end: str,
 ) -> DataFrame:
-    """Parse bronze pageviews files into `pageviews_fact`:
+    """Parse bronze pageviews files for [start, end] into `pageviews_fact`:
     wiki, domain_code, page_title, date, hour, views
+
+    Reads the hours the date range names, not everything in `bronze_dir`.
+    The hourly files cover every Wikimedia project at once, so the bronze
+    directory is shared by every config profile (pipeline/storage.py) and
+    can easily hold hours outside this window.
     """
-    files = sorted(bronze_dir.glob("pageviews-*.gz"))
+    wanted = {_filename(hour) for hour in _hours(start, end)}
+    files = sorted(p for p in bronze_dir.glob("pageviews-*.gz") if p.name in wanted)
     if not files:
-        raise FileNotFoundError(f"no bronze pageviews files in {bronze_dir}")
+        raise FileNotFoundError(
+            f"no bronze pageviews files for {start}..{end} in {bronze_dir}"
+        )
+    missing = sorted(wanted - {p.name for p in files})
+    if missing:
+        # Not fatal: a partial window still answers most questions, but the
+        # gap changes what Q3/Q5 mean, so it shouldn't pass silently.
+        log.warning(
+            "pageviews: %d of %d hour(s) in %s..%s missing from %s (first: %s) -- "
+            "run `download` to fill the gap",
+            len(missing), len(wanted), start, end, bronze_dir, missing[0],
+        )
 
     raw = spark.read.text([str(f) for f in files]).withColumn(
         "source_file", F.input_file_name()
@@ -94,6 +121,13 @@ def to_silver(
         .filter(F.col("page_title") != "-")
         .withColumn("date", F.substring("file_stamp", 1, 8))
         .withColumn("hour", F.substring("file_stamp", 10, 2))
+        # A real timestamp, so nothing downstream has to rebuild one out of
+        # date + hour. That looks trivial and isn't: date and hour are the
+        # *partition* columns, and Parquet partition discovery type-infers
+        # them back as integers, so `hour=08` returns 8 and a naive
+        # concat(date, hour) yields "202610068" -- which parses fine for
+        # hours 10-23 and throws for 00-09.
+        .withColumn("ts", F.to_timestamp("file_stamp", "yyyyMMdd-HHmmss"))
         .withColumn("wiki", F.lit(wiki))
         .drop("file_stamp")
     )

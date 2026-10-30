@@ -14,9 +14,25 @@ pageviews:
 page_dump:
   wiki_db: simplewiki
 
+mediawiki_history:
+  # The page whose edit history stands in for a news timeline (Q2) -- e.g.
+  # "Wikipedia:In_the_news" on enwiki. Optional: simplewiki (today's default
+  # above) has no actively-maintained ITN-style page (both "Current_events"
+  # candidates there are redirects, not a live, edited portal -- confirmed
+  # against the downloaded page dump), so Q2 returns no news matches unless
+  # you switch wiki/wiki_db to enwiki and set this. See
+  # docs/sources/wikinews-itn.md.
+  itn_page_title: null
+
+# A full week, so the questions that need time depth can actually answer.
+# Two hours was enough to exercise the pipeline but made Q2/Q3/Q5 degenerate:
+# with n hourly samples a page's views/avg ratio can't exceed n, so n=2 put
+# every spike below q2's SPIKE_RATIO=3 by arithmetic, and a single Sunday
+# gave q5 nothing to contrast. 2026-10-04 is a Sunday, so this covers one of
+# every weekday. 168 hourly files, ~54MB each (all projects) -- ~9GB.
 date_range:
-  start: "2026-10-04T10"
-  end: "2026-10-04T11"
+  start: "2026-10-04T00"
+  end: "2026-10-10T23"
 
 # Optional: override a question's default chart type (Vega-Lite `mark`)
 # without touching any code -- any mark name works: bar, line, point, area,

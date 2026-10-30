@@ -1,11 +1,11 @@
-# Page dump (page + categorylinks + linktarget)
+# Page dump (page + categorylinks + linktarget + redirect)
 
 **Status:** in use (`src/sources/page_dump.py`, `src/common/sqldump.py`;
 originally prototyped in `poc/ingest_dims.py`, `poc/sqldump.py`).
 
-Three separate files, documented together because they're fetched from the
-same place, share a format, and are only useful joined to each other — this
-is the `sources/page_dump.py` module's input.
+Separate files, documented together because they're fetched from the same
+place, share a format, and are only useful joined to each other — this is
+the `sources/page_dump.py` module's input.
 
 ## Location
 
@@ -14,6 +14,7 @@ is the `sources/page_dump.py` module's input.
 - `<wiki>-latest-page.sql.gz`
 - `<wiki>-latest-categorylinks.sql.gz`
 - `<wiki>-latest-linktarget.sql.gz`
+- `<wiki>-latest-redirect.sql.gz` ([`redirect.md`](redirect.md))
 
 One-time **current-state snapshots**, not a time series — size doesn't
 scale with the study date range. Same schema for every wiki; the PoC used
@@ -21,8 +22,10 @@ scale with the study date range. Same schema for every wiki; the PoC used
 keep iteration fast (~30MB dumps vs. multi-GB) — the same code works
 unchanged on `enwiki` by changing the wiki name.
 
-A sibling file, `redirect.sql.gz`, is documented separately in
-[`redirect.md`](redirect.md) (not yet fetched).
+A fourth file, `<wiki>-latest-redirect.sql.gz`, is fetched by the same
+module and documented separately in [`redirect.md`](redirect.md) — it
+feeds `redirect_dim`, which stops the `pageviews_fact` ↔ `page_dim` join
+from silently dropping 7% of traffic.
 
 ## Format
 

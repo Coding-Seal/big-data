@@ -4,8 +4,8 @@
 src/
   sources/          -- one module per raw dataset; owns download + parsing
     pageviews.py          (implemented)
-    page_dump.py          (implemented; page + categorylinks + linktarget)
-    mediawiki_history.py  [not yet written]
+    page_dump.py          (implemented; page + categorylinks + linktarget + redirect)
+    mediawiki_history.py  (implemented; revision_dim + itn_edit_fact)
     wikidata.py            [new]
     clickstream.py         [new]
 
@@ -14,6 +14,7 @@ src/
                              since fixed for a real multi-line dump format)
     spark.py               (SparkSession bootstrap, one place to change master/config)
     namespaces.py          (namespace-prefix filtering constants)
+    pages.py               (requested title -> canonical page_id, via redirect_dim)
     http.py                (download-with-retry helper)
     logging.py             (logging setup, call once from run.py)
     charts.py              (result DataFrame + encoding + mark -> Vega-Lite spec)
@@ -23,27 +24,33 @@ src/
 
   questions/        -- one module per research question
     q1_topic_time.py        (implemented)
-    q4_length_revisions.py  (implemented, length half only)
-    q2_spikes_news.py       [not yet written]
-    q3_decay.py             [not yet written]
-    q5_weekday.py           [not yet written]
+    q2_spikes_news.py       (implemented)
+    q3_decay.py             (implemented)
+    q4_length_revisions.py  (implemented, both halves)
+    q5_weekday.py           (implemented)
     (q6...)         -- new questions land here only
 
   run.py            -- thin CLI: build silver, run a question, or build gold
 
-silver/           -- NOT code -- the stable schema contract, documented once
-  pageviews_fact(wiki, domain_code, page_title, date, hour, views)
+silver/<wiki>/    -- NOT code -- the stable schema contract, documented once
+  pageviews_fact(wiki, domain_code, page_title, date, hour, ts, views)
+      date/hour are the partition columns and come back type-inferred as
+      ints; `ts` is the timestamp to do arithmetic on.
   page_dim(wiki, page_id, page_title, namespace, length, is_redirect)
   category_dim(wiki, page_id, category)          [or topic_dim once Wikidata lands]
+  redirect_dim(wiki, from_title, to_page_id, to_title)
   revision_dim(wiki, page_id, revision_count, first_edit_ts, last_edit_ts)
+  itn_edit_fact(wiki, event_timestamp, event_comment, revision_text_bytes_diff)
   clickstream_fact(wiki, month, referrer, target_page, referrer_type, n)   [new]
 
-gold/             -- NOT code -- one Vega-Lite JSON chart spec per question
+gold/<wiki>/      -- NOT code -- one Vega-Lite JSON chart spec per question
   <question_name>.json   (data + encoding from the question module, mark
-                           from config.yaml's `gold:` section or the
+                           from the config file's `gold:` section or the
                            module's default_mark())
 
-config.yaml       -- wiki(s), date range, storage root, per-question chart-type overrides
+config.yaml           -- the default profile: Simple English, small and fast
+config.enwiki.yaml    -- the English Wikipedia profile (Q2 needs it)
+  both: wiki(s), date range, storage root, per-question chart-type overrides
 justfile          -- ergonomic wrappers: `just download`, `just build-silver`, `just question <name>`, `just gold`
 ```
 
@@ -51,6 +58,14 @@ justfile          -- ergonomic wrappers: `just download`, `just build-silver`, `
 holds everything importable. Run via `just download` /
 `just build-silver` / `just question <name>`, or directly with
 `uv run python3 src/run.py <command>`.
+
+**Profiles are just extra config files.** `run.py --config <file>` (or
+`just config=config.enwiki.yaml <recipe>`) picks one; nothing else changes.
+Bronze is shared across profiles — the hourly pageviews files are
+all-projects and the dump directories are already wiki-named, so the
+~9GB/week pageviews download is paid once — while silver and gold are
+written under a per-wiki subdirectory, because both are written with
+`mode("overwrite")` and would otherwise clobber each other.
 
 ## The contract that makes this extensible
 
@@ -108,6 +123,11 @@ which additional sources plug into this same shape.
   Wikidata means adding `topic_dim` alongside `category_dim`, not changing
   `category_dim` — existing questions built against `category_dim` keep
   working untouched while new ones can prefer the better table.
+- **Extending beats modifying, even within one source.** Redirect
+  resolution landed as a new `redirect_dim` table plus one shared helper
+  (`common/pages.py`), not as extra columns on `page_dim` — so `q3` and
+  `q5`, which never join to a dimension at all, didn't change, and `q1`/`q4`
+  each gained one line.
 - **Config, not code, controls scope.** Which wiki(s), which date range,
   local vs. cloud storage root — all of this lives in `config.yaml`. Moving
   from the local dev slice to the full university-cloud run is a config

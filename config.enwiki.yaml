@@ -1,0 +1,63 @@
+# English Wikipedia profile. Same pipeline, same code -- only this file
+# differs from config.yaml (the Simple English default used for fast local
+# iteration). Run it with:
+#
+#     just config=config.enwiki.yaml all
+#     uv run python3 src/run.py --config config.enwiki.yaml build-silver
+#
+# Why a second config exists at all: Q2 needs a wiki with a live "In the
+# news" portal, and simplewiki has none -- both of its Current_events-titled
+# pages are redirects, not an edited page (docs/sources/wikinews-itn.md).
+# No amount of simplewiki data fixes that; only switching wikis does.
+#
+# Cost, measured (docs/sources/page-dump.md, mediawiki-history.md):
+# page.sql.gz 2.39GB + categorylinks.sql.gz 2.54GB + linktarget + redirect,
+# plus ~900MB per month of revision history the date range touches. The
+# hourly pageviews files are all-projects, so they are *not* downloaded
+# again -- bronze/pageviews is shared with config.yaml (see run.py's
+# storage_paths).
+
+wiki: en
+storage_root: data  # silver/gold are per-wiki under here, so this coexists
+                    # with the `simple` run rather than overwriting it
+
+pageviews:
+  # Desktop only, matching the simplewiki profile so the two are comparable.
+  # Mobile is a separate domain code (`en.m`) and roughly doubles traffic --
+  # adding it here is a one-line change, but it changes what every question
+  # measures, so it is a deliberate choice rather than a default.
+  domain_codes: [en]
+
+page_dump:
+  wiki_db: enwiki
+
+mediawiki_history:
+  # The edit timeline Q2 matches spikes against. `Template:In_the_news` is
+  # the live blurb list the Main Page transcludes, so it is edited when an
+  # item actually goes up -- a better "news happened at T" signal than
+  # `Wikipedia:In_the_news` (the project page *about* ITN, which barely
+  # changes). `Wikipedia:In_the_news/Candidates` is the other defensible
+  # choice: more edits, but they are nominations and discussion, which lead
+  # the news rather than mark it.
+  #
+  # Write it with the namespace prefix; the source module splits it into
+  # (namespace id, title), which is how mediawiki_history stores pages.
+  itn_page_title: Template:In_the_news
+
+# A September week, deliberately *not* the same week as config.yaml's.
+# Q2 is the reason: mediawiki_history lags, and its newest monthly file is
+# a stub -- the 2026-09 snapshot's `2026-10` file holds a single day
+# (2026-10-01, 16,262 revisions), so an October pageviews window has zero
+# ITN edits to match against. The `2026-09` file is 557MB against a
+# complete August's 570MB, i.e. a full month. Mon 2026-09-14 .. Sun
+# 2026-09-20 sits well inside it.
+#
+# The two profiles covering different weeks is fine: bronze/pageviews is
+# shared, and pageviews.to_silver reads only the hours its own date_range
+# names, so neither profile sees the other's data.
+date_range:
+  start: "2026-09-14T00"
+  end: "2026-09-20T23"
+
+gold:
+  q4_length_revisions: line

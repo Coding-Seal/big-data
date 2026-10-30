@@ -10,7 +10,23 @@ as either a static image or a fully interactive chart (vega-embed) with no
 backend -- how these actually get displayed isn't decided yet, and nothing
 here commits to a renderer.
 """
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
+
+
+def _jsonable(value: Any) -> Any:
+    """Spark types that json.dumps refuses, mapped to what Vega-Lite wants.
+
+    A TimestampType column arrives as a `datetime`, and a `"type":
+    "temporal"` encoding expects ISO-8601 -- which is exactly
+    `datetime.isoformat()`, so this is a conversion, not a lossy fallback.
+    """
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        return float(value)
+    return value
 
 
 def to_vega_lite(
@@ -19,9 +35,10 @@ def to_vega_lite(
     mark: str = "bar",
     title: str | None = None,
 ) -> dict[str, Any]:
+    values = [{k: _jsonable(v) for k, v in row.items()} for row in rows]
     spec: dict[str, Any] = {
         "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-        "data": {"values": rows},
+        "data": {"values": values},
         "mark": mark,
         "encoding": encoding,
     }

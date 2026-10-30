@@ -9,7 +9,6 @@ design that makes that true:
 |---|---|
 | [`layered-design.md`](layered-design.md) | The core contract: `sources/`/`common/`/`questions/` layout, the silver schema, the source/question module interfaces, why this split, what was deliberately left out |
 | [`extending-with-new-sources.md`](extending-with-new-sources.md) | Which additional Wikimedia sources (beyond the ones already prototyped) plug into this architecture, what each adds, and its join key |
-| [`poc-mapping.md`](poc-mapping.md) | How the existing `poc/` files map onto the target structure — temporary scaffolding, delete once the migration actually happens |
 | [`implementation-order.md`](implementation-order.md) | Suggested build order for turning the PoC into the real pipeline |
 | [`ingestion-storage.md`](ingestion-storage.md) | Bronze/silver/gold storage layout, ingestion approach, local→cloud scaling path |
 

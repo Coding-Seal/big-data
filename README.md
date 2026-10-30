@@ -17,15 +17,22 @@ works.
 
 ## Status
 
-The real pipeline (`src/`) is partially built, per
-`docs/arch/layered-design.md`: `pageviews` and `page_dump` source modules
-(download + bronze→silver), and `q1_topic_time` / `q4_length_revisions`
-(length half only) question modules, all run and verified end-to-end
-against real downloaded data. Still missing: `mediawiki_history` (revision
-counts, needed for the rest of Q4), and Q2/Q3/Q5 — see
-`docs/arch/implementation-order.md` for what's next. A proof of concept
-(`poc/`) proved the original bronze→silver→gold shape before `src/`
-existed and is being superseded incrementally.
+All five questions and all three source modules (`pageviews`, `page_dump`,
+`mediawiki_history`) are implemented in `src/` per
+`docs/arch/layered-design.md`, and run end-to-end against real downloaded
+data: `just all` produces `data/gold/<wiki>/*.json`, one Vega-Lite chart
+spec per question.
+
+Two profiles ship: `config.yaml` (Simple English — small and fast) and
+`config.enwiki.yaml` (English Wikipedia). Q2 only produces signal on the
+latter, because simplewiki has no maintained "In the news" page
+(`docs/sources/wikinews-itn.md`).
+
+Known limits of the *results*, as opposed to the code: `category_dim` is
+raw MediaWiki categories, which are maintenance-tag dominated, so Q1's
+"topics" aren't really topics until a Wikidata-backed `topic_dim` lands
+(`docs/arch/extending-with-new-sources.md`). See
+`docs/arch/implementation-order.md` for what's next.
 
 ## Repo layout
 
@@ -35,13 +42,14 @@ src/
   config/    -- typed config.yaml loading (dataclasses, not raw dicts)
   sources/   -- one module per raw dataset: describe() / download() / to_silver()
   questions/ -- one module per research question: required_tables() / run()
-  run.py     -- CLI: download / build-silver / run-question
-config.yaml  -- wiki, date range, storage root
-justfile     -- `just download`, `just build-silver`, `just question <name>`
+  run.py     -- CLI: download / build-silver / run-question / build-gold
+config.yaml         -- default profile: wiki, date range, storage root, chart types
+config.enwiki.yaml  -- English Wikipedia profile (`--config`, see below)
+justfile     -- `just download`, `just build-silver`, `just question <name>`, `just gold`
+data/        -- bronze/ (shared raw downloads), silver/<wiki>/, gold/<wiki>/
 docs/
   sources/   -- one file per Wikimedia dataset (location, format, size, description)
   arch/      -- system architecture, one file per concern (see docs/arch/README.md)
-poc/         -- original proof-of-concept scripts, being superseded by src/
 AGENTS.md    -- shared instructions for coding agents (Claude/Codex/opencode)
 CLAUDE.md    -- imports AGENTS.md for Claude Code
 devenv.nix   -- optional: JDK 17 + Python 3.11 + uv via nix (NixOS/devenv users)
@@ -84,6 +92,14 @@ just question q1_topic_time
 (`just` is only an ergonomic wrapper around `uv run python3 src/run.py
 <command>` — see `justfile`; use that directly if you'd rather not install
 `just`.)
+
+To run the English Wikipedia profile instead, point every recipe at the
+other config — no code changes, and the (large) hourly pageviews files are
+shared with the default profile rather than downloaded twice:
+
+```sh
+just config=config.enwiki.yaml all
+```
 
 ## Agentic development
 

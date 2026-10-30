@@ -1,24 +1,64 @@
 # mediawiki_history
 
-**Status:** planned, not yet ingested into the pipeline — recommended
-source for Q4's revision-count/length-history half (see
-`docs/arch/implementation-order.md`, step 4). Schema is
-now verified against a real downloaded file (below), which was the one
-remaining blocker before writing `sources/mediawiki_history.py`.
+**Status:** in use (`src/sources/mediawiki_history.py`) — feeds `revision_dim`
+(Q4's revision-count half) and `itn_edit_fact` (Q2's news-timeline half, see
+[`wikinews-itn.md`](wikinews-itn.md)).
+
+No "latest" alias exists for this dataset the way `page_dump.md`'s
+`{wiki_db}-latest-*` does, and only the last two monthly snapshot
+generations are retained — `download()` discovers the current snapshot and
+the real per-wiki filenames from the dumps site's own directory listings at
+run time rather than hardcoding a date, which would otherwise 404 within a
+couple of months. Confirmed directly: the snapshot this doc was originally
+written against (`2026-08`) had already rolled to `2026-08`/`2026-09` by the
+time the source module shipped.
 
 ## Location
 
-`https://dumps.wikimedia.org/other/mediawiki_history/<snapshot>/<wiki>/<snapshot>.<wiki>.<YYYY-MM>.tsv.bz2`,
-e.g. `2026-08/enwiki/2026-08.enwiki.2024-01.tsv.bz2`. One file per wiki per
-month/year (bigger wikis get monthly files, smaller ones yearly or
-single-file), capped at ~2GB.
+`https://dumps.wikimedia.org/other/mediawiki_history/<snapshot>/<wiki>/<filename>.tsv.bz2`,
+e.g. `2026-08/enwiki/2026-08.enwiki.2024-01.tsv.bz2` for enwiki, or
+`2026-09/simplewiki/2026-09.simplewiki.all-time.tsv.bz2` for simplewiki —
+confirmed by listing the live `simplewiki/` directory, which contains
+exactly that one file, not a per-month series. Bigger wikis get one file
+per month (`<snapshot>.<wiki>.<YYYY-MM>.tsv.bz2`, capped at ~2GB each);
+smaller wikis get a single `<snapshot>.<wiki>.all-time.tsv.bz2` covering
+their whole history. `download()` lists the per-wiki directory rather than
+assuming which layout applies.
 
 Only the **last two monthly snapshot generations** are retained on the
-dumps site (confirmed: currently `2026-07/` and `2026-08/` only) — but each
-snapshot contains the wiki's **entire history to date**, not just that
-month, so this isn't a data-loss risk, just a retention detail. Since
-files are already per-wiki, only the `enwiki` files covering the target
-date range need downloading — no wasted bandwidth, unlike pageviews.
+dumps site (confirmed again while building the source module: the
+generations had already rolled from `2026-07`/`2026-08` to `2026-08`/`2026-09`)
+— but each snapshot contains the wiki's **entire history to date**, not just
+that month, so this isn't a data-loss risk, just a retention detail. For
+wikis with monthly files, only the months the configured date range
+touches are downloaded — no wasted bandwidth, unlike pageviews.
+
+### It lags the pageviews dumps — by weeks
+
+A snapshot is a batch job, published well after the month it is named
+for, and its newest monthly file is a partial stub. Measured in the
+`2026-09` snapshot's `enwiki` directory:
+
+| File | Generated | Size |
+|---|---|---|
+| `2026-09.enwiki.2026-08.tsv.bz2` | 05-Oct-2026 | 570MB |
+| `2026-09.enwiki.2026-09.tsv.bz2` | 05-Oct-2026 | 557MB |
+| `2026-09.enwiki.2026-10.tsv.bz2` | 05-Oct-2026 | **1.4MB** |
+
+Pageviews, by contrast, are published hourly and are current to
+yesterday. So a date range inside the last few weeks gets full pageview
+coverage and nearly empty edit coverage. Two consequences, both of which
+would otherwise look like findings rather than gaps:
+
+- **Q2** can't tell "this spike wasn't near a news edit" from "no edit
+  data exists for this hour" unless it checks. It does —
+  `q2_spikes_news.py` reports three states, not a boolean.
+- **`revision_dim` covers only pages edited during the downloaded
+  months.** For a small wiki that's moot (one all-time file; simplewiki
+  yields 605K pages, full coverage). For enwiki it is not: a one-month
+  download means Q4's `avg_revisions` describes recently-edited pages,
+  not the wiki. Widening it costs ~570MB per extra month and still never
+  reaches "all pages" — the full enwiki history is ~10GB per recent year.
 
 ## Format
 
