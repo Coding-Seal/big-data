@@ -1,0 +1,9 @@
+.git
+.devenv*
+.direnv
+data/
+logs/
+__pycache__/
+*.pyc
+.venv/
+*.log

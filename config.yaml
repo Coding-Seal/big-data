@@ -36,7 +36,7 @@ date_range:
 
 # Optional: override a question's default chart type (Vega-Lite `mark`)
 # without touching any code -- any mark name works: bar, line, point, area,
-# circle, ... (see src/common/charts.py). Omit a question here to use its
+# circle, ... (see src/pipeline/charts.py). Omit a question here to use its
 # own default_mark().
 gold:
   q4_length_revisions: line

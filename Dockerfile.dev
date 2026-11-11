@@ -1,0 +1,25 @@
+# Development environment: the toolchain only (JDK 17, uv, just), no
+# source baked in -- `just docker-dev` bind-mounts the repo over /app so
+# edits on the host take effect immediately.
+FROM eclipse-temurin:17-jdk-jammy
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      curl ca-certificates git \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh \
+      | bash -s -- --to /usr/local/bin
+
+ENV PYSPARK_PYTHON=python3 \
+    PATH="/app/.venv/bin:${PATH}"
+WORKDIR /app
+
+COPY docker/entrypoint-dev.sh /entrypoint-dev.sh
+RUN chmod +x /entrypoint-dev.sh
+
+ENTRYPOINT ["/entrypoint-dev.sh"]
+# Idle forever; `just docker-dev` attaches with a separate `exec -it bash`
+# rather than running bash as PID 1 without a terminal attached.
+CMD ["sleep", "infinity"]

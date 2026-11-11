@@ -1,9 +1,4 @@
-# Devenv
-.devenv*
-devenv.local.nix
-devenv.local.yaml
 data
-
 
 # direnv
 .direnv
