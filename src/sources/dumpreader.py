@@ -11,7 +11,7 @@ import gzip
 from pathlib import Path
 
 # Shipped via addPyFile and imported by plain name on executors, so the
-# module name has to match on both sides without zipping `common/`.
+# module name has to match on both sides without zipping `sources/`.
 SQLDUMP_PATH = Path(__file__).resolve().parent / "sqldump.py"
 
 

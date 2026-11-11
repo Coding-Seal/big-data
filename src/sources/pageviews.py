@@ -14,8 +14,8 @@ from pathlib import Path
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
-from common.http import fetch_to
-from common.namespaces import NON_ARTICLE_REGEX
+from sources.http import fetch_to
+from sources.namespaces import NON_ARTICLE_REGEX
 from config import DateRange
 
 URL_TMPL = (

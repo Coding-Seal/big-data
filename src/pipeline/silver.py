@@ -11,7 +11,7 @@ from pathlib import Path
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
-from common.spark import get_spark
+from pipeline.spark import get_spark
 from config import Config
 from sources import mediawiki_history, page_dump, pageviews
 

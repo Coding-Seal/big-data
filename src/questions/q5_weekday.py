@@ -2,7 +2,7 @@
 Q5: weekday vs. weekend traffic pattern, by hour of day.
 
 A groupBy over pageviews_fact, but resolved onto articles first
-(common/pages.py), for two reasons:
+(questions/pages.py), for two reasons:
 
   - `articles` has to be a count of articles. Counting distinct page_title
     counts a redirect as its own article, so the column read high by
@@ -19,7 +19,7 @@ A groupBy over pageviews_fact, but resolved onto articles first
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from common.pages import with_page_id
+from questions.pages import with_page_id
 
 DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 

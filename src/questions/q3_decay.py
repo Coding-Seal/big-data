@@ -6,12 +6,12 @@ to run on *articles*, not on URL titles: a redirect carries its own hourly
 series in pageviews_fact, so keying on page_title would chart
 `Hurricane_Melissa` and a redirect pointing at it as two unrelated curves,
 each peaking lower than the article actually did. page_dim/redirect_dim are
-required for that fold alone (common/pages.py) -- no new source.
+required for that fold alone (questions/pages.py) -- no new source.
 """
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from common.pages import with_page_id
+from questions.pages import with_page_id
 
 # Same reasoning as q1's TOP_N_CATEGORIES: ungated this is one row per
 # (page, hour) for every page that ever appears, most of it one-off noise.

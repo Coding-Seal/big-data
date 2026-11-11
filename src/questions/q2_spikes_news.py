@@ -28,7 +28,7 @@ outside the span itn_edit_fact actually covers are labelled explicitly.
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from common.pages import with_page_id
+from questions.pages import with_page_id
 
 # A hour counts as a "spike" for a page if its views are at least this many
 # times that page's own average views over the window.
@@ -75,7 +75,7 @@ def run(tables: dict[str, DataFrame]) -> DataFrame:
 
     # Spike detection has to run per *article*, not per URL title. Redirect
     # traffic is 7.2% of all views and concentrated on exactly the
-    # news-driven pages this question is about (common/pages.py), so keying
+    # news-driven pages this question is about (questions/pages.py), so keying
     # on page_title both splits one news event across several rows and
     # understates the article's real peak -- the two failure modes that
     # would most distort an answer about news.

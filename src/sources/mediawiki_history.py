@@ -18,8 +18,8 @@ from pathlib import Path
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
-from common.http import fetch_text, fetch_to
-from common.namespaces import split_prefixed_title
+from sources.http import fetch_text, fetch_to
+from sources.namespaces import split_prefixed_title
 
 INDEX_URL = "https://dumps.wikimedia.org/other/mediawiki_history/"
 WIKI_DIR_URL_TMPL = INDEX_URL + "{snapshot}/{wiki_db}/"

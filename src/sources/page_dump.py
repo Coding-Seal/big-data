@@ -17,8 +17,8 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from common.dumpreader import SQLDUMP_PATH, dump_path, parse_table
-from common.http import fetch_to
+from sources.dumpreader import SQLDUMP_PATH, dump_path, parse_table
+from sources.http import fetch_to
 
 TABLES = ["page", "categorylinks", "linktarget", "redirect", "page_props"]
 URL_TMPL = "https://dumps.wikimedia.org/{wiki_db}/latest/{wiki_db}-latest-{table}.sql.gz"
@@ -65,7 +65,7 @@ PAGE_PROPS_SCHEMA = StructType([
 # category page, which the dumps expose as this page property. It is the
 # structural version of "is this a maintenance category" -- the name-pattern
 # heuristic it replaced needed two measured rounds and still leaked (see
-# common/categories.py).
+# questions/categories.py).
 HIDDENCAT_PROP = "hiddencat"
 
 log = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ log = logging.getLogger(__name__)
 def describe() -> dict:
     return {
         "name": "page_dump",
-        "format": "raw MySQL INSERT dump (gzip) -- needs common/sqldump.py",
+        "format": "raw MySQL INSERT dump (gzip) -- needs sources/sqldump.py",
         "partitioning": "one-time snapshot per wiki, not a time series",
     }
 

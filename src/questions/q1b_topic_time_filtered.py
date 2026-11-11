@@ -2,7 +2,7 @@
 Q1b: traffic distribution by category x time of day, **excluding**
 maintenance and template-bookkeeping categories.
 
-Same aggregation as q1_topic_time (common/categories.py), one filter
+Same aggregation as q1_topic_time (questions/categories.py), one filter
 different. The pair is the point: q1 shows that MediaWiki categories are
 dominated by tracking tags, q1b shows what is left once they are gone, and
 reporting only one of the two would be the misleading half.
@@ -21,7 +21,7 @@ at all.
 """
 from pyspark.sql import DataFrame
 
-from common.categories import views_by_category_hour
+from questions.categories import views_by_category_hour
 
 # Same cap and reasoning as q1_topic_time's.
 TOP_N_CATEGORIES = 15

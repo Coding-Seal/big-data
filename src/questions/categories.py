@@ -40,7 +40,7 @@ removes bookkeeping.
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from common.pages import with_page_id
+from questions.pages import with_page_id
 
 def views_by_category_hour(
     views: DataFrame,
@@ -56,7 +56,7 @@ def views_by_category_hour(
 
     `views` folds through `with_page_id` first, so redirect traffic lands on
     the article it points at and `articles` counts articles rather than URL
-    titles (common/pages.py).
+    titles (questions/pages.py).
 
     Note the view counts are **not** additive across categories: an article
     belongs to many at once, so one view is counted once per category it

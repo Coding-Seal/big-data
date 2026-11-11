@@ -3,7 +3,7 @@ Q5b: weekday vs. weekend traffic, **excluding the front page**.
 
 Same aggregation as q5_weekday (whose `aggregate()` this calls), over a
 page_dim/redirect_dim with `Main_Page` removed from both sides
-(common/pages.py::without_titles).
+(questions/pages.py::without_titles).
 
 Why this variant exists rather than just a caveat on q5: the front page is
 a namespace-0 non-redirect, so the fold keeps it, and on the enwiki week
@@ -21,7 +21,7 @@ alone.
 """
 from pyspark.sql import DataFrame
 
-from common.pages import MAIN_PAGE_TITLES, without_titles
+from questions.pages import MAIN_PAGE_TITLES, without_titles
 
 from . import q5_weekday
 

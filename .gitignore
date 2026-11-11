@@ -19,7 +19,7 @@ __pycache__/
 # PoC data (re-downloadable from Wikimedia, not source-controlled)
 poc/data/
 
-# Run logs. The documented way to launch a long job redirects into the repo
-# root (`> gold.log`, see .agents/skills/running-pipeline-jobs), so these
-# accumulate from normal use.
-*.log
+# Run logs. The documented way to launch a long job redirects into logs/
+# (see .agents/skills/running-pipeline-jobs), so these accumulate from
+# normal use.
+logs/

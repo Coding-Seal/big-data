@@ -10,7 +10,7 @@
 import argparse
 from pathlib import Path
 
-from common.logging import configure
+from pipeline.logging import configure
 from config import load_config
 from pipeline import bronze, gold, silver
 from pipeline.storage import REPO_ROOT

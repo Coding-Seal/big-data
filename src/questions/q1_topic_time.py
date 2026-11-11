@@ -5,7 +5,7 @@ pageviews_fact only has page_title, not page_id, so page_dim is the
 required bridge to join into category_dim -- not just the two tables the
 architecture doc's example suggests. redirect_dim comes along for the ride
 because a bare page_dim join silently drops redirect traffic
-(common/pages.py).
+(questions/pages.py).
 
 What this measures honestly: at enwiki scale every one of the top 15
 categories by views is a maintenance/tracking tag, so unfiltered this is a
@@ -16,7 +16,7 @@ removed, and the pair is more informative than either alone.
 """
 from pyspark.sql import DataFrame
 
-from common.categories import views_by_category_hour
+from questions.categories import views_by_category_hour
 
 # category_dim has tens of thousands of distinct categories (mostly one-off
 # maintenance tags -- see docs/sources/page-dump.md). Ungated, run() returns
@@ -38,7 +38,7 @@ def chart_encoding() -> dict:
             # An article carries many categories at once, so a view is
             # counted once per category and the series overlap. Vega-Lite
             # stacks bar+color by default, which would draw an hourly total
-            # ~3.8x real traffic out of overlapping sets (common/categories.py).
+            # ~3.8x real traffic out of overlapping sets (questions/categories.py).
             "stack": None,
         },
         "color": {"field": "category", "type": "nominal"},

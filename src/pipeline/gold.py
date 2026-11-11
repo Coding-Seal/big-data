@@ -7,8 +7,8 @@ so changing a chart's type is a config edit, not a code change.
 import json
 import logging
 
-from common.charts import to_vega_lite
-from common.spark import get_spark
+from pipeline.charts import to_vega_lite
+from pipeline.spark import get_spark
 from config import Config
 from questions import QUESTIONS
 

@@ -19,7 +19,7 @@ avg_views_if_viewed = avg_views / pct_viewed.
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from common.pages import with_page_id
+from questions.pages import with_page_id
 
 LENGTH_BUCKETS = ["<1KB", "1-5KB", "5-20KB", "20KB+"]
 

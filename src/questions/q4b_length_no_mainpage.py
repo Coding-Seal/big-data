@@ -4,7 +4,7 @@ page**.
 
 Same aggregation as q4_length_revisions (whose `aggregate()` this calls),
 over a page_dim/redirect_dim with `Main_Page` removed from both sides
-(common/pages.py::without_titles).
+(questions/pages.py::without_titles).
 
 Q4 averages views over *every* article in a length bucket, which is the
 design that made the length effect visible at all (see q4's docstring). The
@@ -23,7 +23,7 @@ much is one row.
 """
 from pyspark.sql import DataFrame
 
-from common.pages import MAIN_PAGE_TITLES, without_titles
+from questions.pages import MAIN_PAGE_TITLES, without_titles
 
 from . import q4_length_revisions
 
